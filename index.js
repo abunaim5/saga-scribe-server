@@ -25,20 +25,25 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const blogsCollection = client.db('sagaScribeDB').collection('blogs');
 
     app.get('/blogs', async (req, res) => {
-        const result = await blogsCollection.find().toArray();
-        res.send(result);
+      let query = {}
+      if (req.query?.category) {
+        query = { category: req.query.category }
+      }
+
+      const result = await blogsCollection.find(query).toArray();
+      res.send(result);
     });
 
-    app.get('/blogs/:id', async(req, res) => {
-        const id = req.params.id;
-        const query = {_id: new ObjectId(id)};
-        const result = await blogsCollection.findOne(query);
-        res.send(result);
+    app.get('/blogs/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await blogsCollection.findOne(query);
+      res.send(result);
     });
 
     // Send a ping to confirm a successful connection
@@ -53,9 +58,9 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-    res.send('Saga Scrive Server is Running');
+  res.send('Saga Scrive Server is Running');
 });
 
 app.listen(port, () => {
-    console.log(`Saga Scribe listening on port ${port}`)
+  console.log(`Saga Scribe listening on port ${port}`)
 })
