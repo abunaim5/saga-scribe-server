@@ -28,6 +28,7 @@ async function run() {
     // await client.connect();
 
     const blogsCollection = client.db('sagaScribeDB').collection('blogs');
+    const wishlistCollection = client.db('sagaScribeDB').collection('wishlist');
 
     app.get('/blogs', async (req, res) => {
       let query = {}
@@ -51,7 +52,13 @@ async function run() {
       const result = await blogsCollection.insertOne(data);
       res.send(result);
       // console.log(data)
-    })
+    });
+
+    app.post('/wishlist', async(req, res) => {
+      const data = req.body;
+      const result = await wishlistCollection.insertOne(data);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
