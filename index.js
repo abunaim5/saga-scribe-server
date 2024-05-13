@@ -27,9 +27,12 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
 
+    // Database and collections
     const blogsCollection = client.db('sagaScribeDB').collection('blogs');
     const wishlistCollection = client.db('sagaScribeDB').collection('wishlist');
+    const commentsCollection = client.db('sagaScribeDB').collection('comments');
 
+    // Find all blogs or find a specific category blogs
     app.get('/blogs', async (req, res) => {
       let query = {}
       if (req.query?.category) {
@@ -40,6 +43,7 @@ async function run() {
       res.send(result);
     });
 
+    // Find wishlist blogs by specific user
     app.get('/wishlist/:email', async(req, res) => {
       const email = req.params.email;
       const query = {wisher_email: email}
@@ -67,12 +71,20 @@ async function run() {
       res.send(result);
     });
 
+    // Add comments to database
+    app.post('/comments', async(req, res) => {
+      const data = req.body;
+      console.log(data);
+      const result = await commentsCollection.insertOne(data);
+      res.send(result);
+    })
+
     app.delete('/wishlist/:id', async(req, res) => {
       const id = req.params.id;
       const query = {_id: id}
       const result = await wishlistCollection.deleteOne(query);
       res.send(result);
-      console.log(req.params.id)
+      // console.log(req.params.id)
     })
 
     // Send a ping to confirm a successful connection
