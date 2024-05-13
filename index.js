@@ -7,7 +7,14 @@ const port = process.env.PORT || 5000;
 
 // middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: [
+    // 'http://localhost:5173',
+    'https://saga-scribe.web.app',
+    'https://saga-scribe.firebaseapp.com'
+  ],
+  credentials: true
+}));
 
 
 
@@ -44,59 +51,73 @@ async function run() {
     });
 
     // Find wishlist blogs by specific user
-    app.get('/wishlist/:email', async(req, res) => {
+    app.get('/wishlist/:email', async (req, res) => {
       const email = req.params.email;
-      const query = {wisher_email: email}
+      const query = { wisher_email: email }
       const result = await wishlistCollection.find(query).toArray();
       res.send(result);
     })
 
     // Find comments by specific blog id
-    app.get('/comments/:id', async(req, res) => {
+    app.get('/comments/:id', async (req, res) => {
       const id = req.params.id;
-      const query = {_id: id}
+      const query = { blog_id: id }
       const result = await commentsCollection.find(query).toArray();
       res.send(result);
     })
 
     app.get('/blogs/:id', async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const result = await blogsCollection.findOne(query);
       res.send(result);
     });
 
-    app.post('/blogs', async(req, res) => {
+    app.post('/blogs', async (req, res) => {
       const data = req.body;
       const result = await blogsCollection.insertOne(data);
       res.send(result);
       // console.log(data)
     });
 
-    app.post('/wishlist', async(req, res) => {
+    app.post('/wishlist', async (req, res) => {
       const data = req.body;
       const result = await wishlistCollection.insertOne(data);
       res.send(result);
     });
 
     // Add comments to database
-    app.post('/comments', async(req, res) => {
+    app.post('/comments', async (req, res) => {
       const data = req.body;
       console.log(data);
       const result = await commentsCollection.insertOne(data);
       res.send(result);
+    });
+
+    app.put('/blogs/:id', async (req, res) => {
+      const id = req.params.id;
+      const updatedData = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          ...updatedData
+        }
+      }
+      const result = await blogsCollection.updateOne(filter, updateDoc, options)
+      res.send(result);
     })
 
-    app.delete('/wishlist/:id', async(req, res) => {
+    app.delete('/wishlist/:id', async (req, res) => {
       const id = req.params.id;
-      const query = {_id: id}
+      const query = { _id: id }
       const result = await wishlistCollection.deleteOne(query);
       res.send(result);
       // console.log(req.params.id)
     })
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
