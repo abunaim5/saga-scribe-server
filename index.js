@@ -51,6 +51,14 @@ async function run() {
       res.send(result);
     })
 
+    // Find comments by specific blog id
+    app.get('/comments/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: id}
+      const result = await commentsCollection.find(query).toArray();
+      res.send(result);
+    })
+
     app.get('/blogs/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id)};
