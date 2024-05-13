@@ -40,8 +40,10 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/wishlist', async(req, res) => {
-      const result = await wishlistCollection.find().toArray();
+    app.get('/wishlist/:email', async(req, res) => {
+      const email = req.params.email;
+      const query = {wisher_email: email}
+      const result = await wishlistCollection.find(query).toArray();
       res.send(result);
     })
 
