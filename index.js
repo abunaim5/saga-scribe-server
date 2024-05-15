@@ -9,11 +9,11 @@ const port = process.env.PORT || 5000;
 app.use(express.json());
 app.use(cors({
   origin: [
-    // 'http://localhost:5173',
+    'http://localhost:5173',
     'https://saga-scribe.web.app',
     'https://saga-scribe.firebaseapp.com'
   ],
-  credentials: true
+  credentials: true,
 }));
 
 
@@ -29,6 +29,35 @@ const client = new MongoClient(uri, {
   }
 });
 
+const PUBLIC_KEY=process.env.ATLAS_PUBLIC_KEY
+const PRIVATE_KEY=process.env.ATLAS_PRIVATE_KEY
+const GROUP_ID=process.env.ATLAS_PROJECT_ID
+const CLUSTER_NAME=process.env.Cluster0
+const ATLAS_SEARCH_INDEX_API_URL=`https://cloud.mongodb.com/api/atlas/v1.0/groups/${GROUP_ID}/clusters/${CLUSTER_NAME}/fts/indexes?pretty=true`
+const  DIGEST_AUTH=`${PUBLIC_KEY}:${PRIVATE_KEY}`
+const CONTENT_HEADER="Content-Type: application/json"
+
+
+async function upsertSearchIndex() {
+  await request(ATLAS_SEARCH_INDEX_API_URL, {
+      data:{
+        "collectionName" : "blogs",
+        "database" : "sagaScribeDB",
+        "indexID" : "60bfd25f59fc81594354eed3",
+        "mappings" : {
+          "dynamic" : true
+        },
+        dataType: 'json',
+        contentType: CONTENT_HEADER,
+        method: 'POST',
+        digestAuth: DIGEST_AUTH,
+        "name" : "default",
+        "status" : "IN_PROGRESS"
+      }
+  })
+}
+
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -38,6 +67,7 @@ async function run() {
     const blogsCollection = client.db('sagaScribeDB').collection('blogs');
     const wishlistCollection = client.db('sagaScribeDB').collection('wishlist');
     const commentsCollection = client.db('sagaScribeDB').collection('comments');
+    // blogsCollection.createIndex({ title: 'text' })
 
     // Find all blogs or find a specific category blogs
     app.get('/blogs', async (req, res) => {
@@ -45,8 +75,18 @@ async function run() {
       if (req.query?.category) {
         query = { category: req.query.category }
       }
-
+      if (req.query?.title) {
+        const text = req.query?.title
+        query = { $text: { $search: text } }
+      }
       const result = await blogsCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.get('/featured', async (req, res) => {
+      let query = {}
+      const sort = {long_description: -1}
+      const result = await blogsCollection.find(query).sort(sort).limit(10).toArray()
       res.send(result);
     });
 
@@ -89,7 +129,6 @@ async function run() {
     // Add comments to database
     app.post('/comments', async (req, res) => {
       const data = req.body;
-      console.log(data);
       const result = await commentsCollection.insertOne(data);
       res.send(result);
     });
