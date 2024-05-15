@@ -83,6 +83,11 @@ async function run() {
       res.send(result);
     });
 
+    app.get('/recentblogs', async (req, res) => {
+      const result = await blogsCollection.find().limit(6).toArray();
+      res.send(result);
+    });
+
     app.get('/featured', async (req, res) => {
       let query = {}
       const sort = {long_description: -1}
